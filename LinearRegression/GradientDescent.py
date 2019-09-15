@@ -53,6 +53,12 @@ class GradientDescent:
 			self.fit()
 		return self.xSmallest, self.ySmallest
 
+	def report(self):
+		print("xSmallest = {}".format(self.xSmallest))
+		print("ySmallest = {}".format(self.ySmallest))
+		print("total running steps: {}".format(self.steps))
+		print("found smallest y at step: {}".format(self.smalestAt))
+
 
 #Test
 """
