@@ -1,18 +1,11 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
-
-
 import BasisFunction as bf
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from matplotlib import cm
-
-
-# In[31]:
-
 
 class ThirdOrderSurface:
     def __init__(self, xrange: tuple, yrange: tuple, zrange: tuple, zfunction):
@@ -52,6 +45,8 @@ class ThirdOrderSurface:
         fig.colorbar(surf, shrink=0.5, aspect=5)
         
     def genGaussianNoisyPoints(self, N, variance, seed = 0):
+        if self.zfunction is None:
+            raise Exception('no such z function')
         np.random.seed(seed)
         x = np.random.uniform(self.xrange[0], self.xrange[1], N)
         y = np.random.uniform(self.yrange[0], self.yrange[1], N)

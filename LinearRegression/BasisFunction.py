@@ -1,14 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[1]:
-
-
 import numpy as np
-
-
-# In[63]:
-
 
 class utils:
     
@@ -16,10 +9,6 @@ class utils:
     def colPower(x, col, deg):
         N = len(x)
         return np.power(x[:, col].reshape(N, 1), deg)
-
-
-# In[70]:
-
 
 class BaseBasicFunction:
     def __init__(self, x, featureFunc): #x: N rows, K features
@@ -44,11 +33,3 @@ class BaseBasicFunction:
         for i in range(start + 1, self.totalDegree):
             stack = np.column_stack((stack, self._evaluate(i)))
         return stack
-        
-
-
-# In[ ]:
-
-
-
-
