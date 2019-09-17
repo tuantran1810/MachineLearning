@@ -8,7 +8,7 @@ class GradientDescent:
 			self.x = x0
 		else:
 			np.random.seed(seed)
-			self.x = np.random.uniform(-10.0, 10.0, xDegree)
+			self.x = np.random.uniform(-10.0, 10.0, xDegree).reshape(-1, 1)
 		self.eta = eta
 		self.function = function
 		self.diffFunction = diffFunction
@@ -22,6 +22,11 @@ class GradientDescent:
 		self.smalestAt = 0
 
 	def  _evaluate(self):
+		print("-----------------------------------")
+		print(self.x)
+		print(self.diffFunction(self.x))
+		print(self.eta)
+		print("-----------------------------------")
 		self.x = np.subtract(self.x, self.eta*(self.diffFunction(self.x)))
 		tmpy = self.function(self.x)
 		self.xRecord.append(self.x)

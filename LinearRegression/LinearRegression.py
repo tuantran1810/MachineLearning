@@ -41,7 +41,7 @@ class RidgeLinearRegressor(LinearRegressor):
         return self
     
 class LassoLinearRegression(LinearRegressor):
-    def __init__(self, basisFuncs, Xorig, t, grad, lamb = 0):
+    def __init__(self, basisFuncs, Xorig, t, lamb = 0.1):
         self.lamb = lamb
         self.grad_eta = 0.1
         self.grad_eps = 0.01
@@ -54,15 +54,13 @@ class LassoLinearRegression(LinearRegressor):
         k = len(self.X[0])
         w0 = np.zeros(k).reshape(-1, 1)
         
-        difffunc = lambda w: 
-            self.X.T.dot(self.X).dot(w) - self.X.T.dot(self.t) + 0.5*self.lamb*np.sign(w)
+        difffunc = lambda w: np.add(np.subtract(self.X.T.dot(self.X).dot(w), self.X.T.dot(self.t)), 0.5*self.lamb*np.sign(w))
 
-        func = lambda w:
-            np.subtract(self.t, w.T.dot(self.X)).T.dot(np.subtract(self.t, w.T.dot(self.X))) + 0.5*self.lamb*np.absolute(w)
+        func = lambda w: np.subtract(self.t, self.X.dot(w)).T.dot(np.subtract(self.t, self.X.dot(w))) + 0.5*self.lamb*np.sum(np.absolute(w))
 
         return gd.GradientDescent(self.grad_eta, func, difffunc, k, x0 = w0, eps = self.grad_eps)
 
-    def setGradParam(self, eta, eps):
+    def setGradParam(self, eta = 0.1, eps = 0.01):
         self.grad_eta = eta
         self.grad_eps = eps
 
