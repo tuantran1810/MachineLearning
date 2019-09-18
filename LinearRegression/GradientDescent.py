@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 from ThirdOrderSurface import ThirdOrderSurface
 
 class GradientDescent:
-	def __init__(self, eta, function, diffFunction, xDegree, eps = 0.01, Nsteps = 10000, x0 = None, seed = 0):
+	def __init__(self, eta, function, diffFunction, xDegree, eps = 0.01, ylim = 0.1, Nsteps = 100000, x0 = None, seed = 0):
 		if x0 is not None:
 			self.x = x0
 		else:
@@ -20,14 +20,15 @@ class GradientDescent:
 		self.xSmallest = self.x
 		self.ySmallest = function(self.x)
 		self.smalestAt = 0
+		self.ylim = ylim
 
 	def  _evaluate(self):
-		print("-----------------------------------")
-		print(self.x)
-		print(self.diffFunction(self.x))
-		print(self.eta)
-		print("-----------------------------------")
-		self.x = np.subtract(self.x, self.eta*(self.diffFunction(self.x)))
+		# print("-----------------------------------")
+		# print(self.x)
+		# print(self.diffFunction(self.x))
+		# print(self.eta)
+		# print("-----------------------------------")
+		self.x = self.x - self.eta*(self.diffFunction(self.x))
 		tmpy = self.function(self.x)
 		self.xRecord.append(self.x)
 		self.yRecord.append(tmpy)
@@ -39,15 +40,23 @@ class GradientDescent:
 
 	def fit(self):
 		pre_x = self.x
+		cnt = 0
 		for i in range(self.Nsteps):
+			cnt += 1
 			smallest, new_x = self._evaluate()
 			if smallest: self.smalestAt = i
-			if np.linalg.norm(np.subtract(pre_x, new_x)) > self.eps:
-				pre_x = new_x
-				continue
-			self.steps = i
-			break
-		self.steps = self.Nsteps
+
+			reportSteps = self.Nsteps/100
+			if i%reportSteps == 0:
+				self.report()
+
+			if np.linalg.norm(pre_x - new_x) <= self.eps:
+				break
+			elif self.ylim >= self.yRecord[-1]:
+				break
+			pre_x = new_x
+
+		self.steps = cnt
 		return self
 
 	def recordData(self):
@@ -59,10 +68,12 @@ class GradientDescent:
 		return self.xSmallest, self.ySmallest
 
 	def report(self):
-		print("xSmallest = {}".format(self.xSmallest))
+		print("-----------")
+		print("xSmallest = \n{}".format(self.xSmallest))
 		print("ySmallest = {}".format(self.ySmallest))
 		print("total running steps: {}".format(self.steps))
 		print("found smallest y at step: {}".format(self.smalestAt))
+		print("-----------")
 
 
 #Test

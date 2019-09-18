@@ -45,6 +45,8 @@ class LassoLinearRegression(LinearRegressor):
         self.lamb = lamb
         self.grad_eta = 0.1
         self.grad_eps = 0.01
+        self.grad_steps = 100000
+        self.grad_ylim = 0.1
         super().__init__(basisFuncs, Xorig, t)
         self.X = bf.BaseBasicFunction(self.Xorig, self.basisFuncs).generate()
         self.grad = None
@@ -52,17 +54,21 @@ class LassoLinearRegression(LinearRegressor):
 
     def _getGrad(self):
         k = len(self.X[0])
-        w0 = np.zeros(k).reshape(-1, 1)
+        # w0 = np.zeros(k).reshape(-1, 1)
+        w0 = np.random.uniform(-1, 1, k).reshape(-1, 1)
         
-        difffunc = lambda w: np.add(np.subtract(self.X.T.dot(self.X).dot(w), self.X.T.dot(self.t)), 0.5*self.lamb*np.sign(w))
+        # difffunc = lambda w: np.add(np.subtract(self.X.T.dot(self.X).dot(w), self.X.T.dot(self.t)), 0.5*self.lamb*np.sign(w))
+        difffunc = lambda w: -2.0*(self.X.T).dot(self.t) + 2.0*(self.X.T).dot(self.X).dot(w) + self.lamb*np.sign(w)
 
-        func = lambda w: np.subtract(self.t, self.X.dot(w)).T.dot(np.subtract(self.t, self.X.dot(w))) + 0.5*self.lamb*np.sum(np.absolute(w))
+        func = lambda w: ((self.t - self.X.dot(w)).T).dot(self.t - self.X.dot(w)) + self.lamb*np.sum(np.absolute(w))
 
-        return gd.GradientDescent(self.grad_eta, func, difffunc, k, x0 = w0, eps = self.grad_eps)
+        return gd.GradientDescent(self.grad_eta, func, difffunc, k, x0 = w0, eps = self.grad_eps, Nsteps = self.grad_steps, ylim = self.grad_ylim)
 
-    def setGradParam(self, eta = 0.1, eps = 0.01):
+    def setGradParam(self, eta = 0.1, eps = 0.01, steps = 100000, ylim = 0.1):
         self.grad_eta = eta
         self.grad_eps = eps
+        self.grad_steps = steps
+        self.grad_ylim = ylim
 
     def fit(self):
         self.grad = self._getGrad().fit()
@@ -71,4 +77,5 @@ class LassoLinearRegression(LinearRegressor):
         return self
 
     def reportGradStatus(self):
+        print(self.grad.yRecord[self.grad.steps - 10: self.grad.steps])
         self.grad.report()
