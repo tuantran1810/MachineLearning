@@ -31,9 +31,7 @@ class Classification():
 			yield (segX, segt)
 
 	def _shuffle(self):
-		self.X, self.t = shuffle(self.X, self.t.ravel())
-		self.t = self.t.reshape(-1, 1)
-		self._segmentation()
+		self.X, self.t = shuffle(self.X, self.t)
 
 	def __fit(self, segmentX, segmentt):
 		z = segmentX.dot(self.w)
@@ -55,7 +53,7 @@ class Classification():
 	def _mse(self, t, prediction):
 		Nsample = len(t)
 		e = t - prediction
-		return np.asscalar(e.T.dot(e))/Nsample
+		return e.T.dot(e)/Nsample
 
 	def trainMSE(self):
 		prediction = self._predict(self.X)
@@ -67,8 +65,24 @@ class Classification():
 			print("MSE for prediction = {}".format(self._mse(t, prediction)))
 		return prediction
 
+	def predictLabel(self, X, t = None):
+		prediction = self._predict(X, t)
+		ret = np.argmax(prediction, axis = 1)
+		return np.array(ret, dtype = float).reshape(-1, 1)
+
+	def predict(self, X, t = None):
+		prediction = self._predict(X, t)
+		index = np.argmax(prediction, axis = 1)
+		ret = []
+		for i in range(len(index)):
+			ret_ = np.zeros(self.Nclasses, dtype = float)
+			ret_[index[i]] = 1.0
+			ret.append(ret_)
+
+		return np.array(ret)
+
+class TwoClassesClassification(Classification):
 	def predict(self, X, t = None):
 		prediction = self._predict(X, t)
 		return np.heaviside(prediction - 0.5, 0.0)
-
 
