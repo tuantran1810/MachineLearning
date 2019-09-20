@@ -85,4 +85,3 @@ class TwoClassesClassification(Classification):
 	def predict(self, X, t = None):
 		prediction = self._predict(X, t)
 		return np.heaviside(prediction - 0.5, 0.0)
-
