@@ -3,77 +3,77 @@ import matplotlib.pyplot as plt
 from ThirdOrderSurface import ThirdOrderSurface
 
 class GradientDescent:
-	def __init__(self, eta, function, diffFunction, xDegree, eps = 0.01, ylim = 0.1, Nsteps = 100000, x0 = None, seed = 0):
-		if x0 is not None:
-			self.x = x0
-		else:
-			np.random.seed(seed)
-			self.x = np.random.uniform(-10.0, 10.0, xDegree).reshape(-1, 1)
-		self.eta = eta
-		self.function = function
-		self.diffFunction = diffFunction
-		self.Nsteps = Nsteps
-		self.eps = eps
-		self.steps = -1
-		self.xRecord = [self.x]
-		self.yRecord = [function(self.x)]
-		self.xSmallest = self.x
-		self.ySmallest = function(self.x)
-		self.smalestAt = 0
-		self.ylim = ylim
+    def __init__(self, eta, function, diffFunction, xDegree, eps = 0.01, ylim = 0.1, Nsteps = 100000, x0 = None, seed = 0):
+        if x0 is not None:
+            self.x = x0
+        else:
+            np.random.seed(seed)
+            self.x = np.random.uniform(-10.0, 10.0, xDegree).reshape(-1, 1)
+        self.eta = eta
+        self.function = function
+        self.diffFunction = diffFunction
+        self.Nsteps = Nsteps
+        self.eps = eps
+        self.steps = -1
+        self.xRecord = [self.x]
+        self.yRecord = [function(self.x)]
+        self.xSmallest = self.x
+        self.ySmallest = function(self.x)
+        self.smalestAt = 0
+        self.ylim = ylim
 
-	def  _evaluate(self):
-		# print("-----------------------------------")
-		# print(self.x)
-		# print(self.diffFunction(self.x))
-		# print(self.eta)
-		# print("-----------------------------------")
-		self.x = self.x - self.eta*(self.diffFunction(self.x))
-		tmpy = self.function(self.x)
-		self.xRecord.append(self.x)
-		self.yRecord.append(tmpy)
-		if tmpy < self.ySmallest:
-			self.ySmallest = tmpy
-			self.xSmallest = self.x
-			return (True, self.x)
-		return (False, self.x)
+    def  _evaluate(self):
+        # print("-----------------------------------")
+        # print(self.x)
+        # print(self.diffFunction(self.x))
+        # print(self.eta)
+        # print("-----------------------------------")
+        self.x = self.x - self.eta*(self.diffFunction(self.x))
+        tmpy = self.function(self.x)
+        self.xRecord.append(self.x)
+        self.yRecord.append(tmpy)
+        if tmpy < self.ySmallest:
+            self.ySmallest = tmpy
+            self.xSmallest = self.x
+            return (True, self.x)
+        return (False, self.x)
 
-	def fit(self):
-		pre_x = self.x
-		cnt = 0
-		for i in range(self.Nsteps):
-			cnt += 1
-			smallest, new_x = self._evaluate()
-			if smallest: self.smalestAt = i
+    def fit(self):
+        pre_x = self.x
+        cnt = 0
+        for i in range(self.Nsteps):
+            cnt += 1
+            smallest, new_x = self._evaluate()
+            if smallest: self.smalestAt = i
 
-			reportSteps = self.Nsteps/100
-			if i%reportSteps == 0:
-				self.report()
+            reportSteps = self.Nsteps/100
+            if i%reportSteps == 0:
+                self.report()
 
-			if np.linalg.norm(pre_x - new_x) <= self.eps:
-				break
-			elif self.ylim >= self.yRecord[-1]:
-				break
-			pre_x = new_x
+            if np.linalg.norm(pre_x - new_x) <= self.eps:
+                break
+            elif self.ylim >= self.yRecord[-1]:
+                break
+            pre_x = new_x
 
-		self.steps = cnt
-		return self
+        self.steps = cnt
+        return self
 
-	def recordData(self):
-		return self.steps, self.smalestAt, np.array(self.xRecord), np.array(self.yRecord)
+    def recordData(self):
+        return self.steps, self.smalestAt, np.array(self.xRecord), np.array(self.yRecord)
 
-	def output(self):
-		if self.steps == -1:
-			self.fit()
-		return self.xSmallest, self.ySmallest
+    def output(self):
+        if self.steps == -1:
+            self.fit()
+        return self.xSmallest, self.ySmallest
 
-	def report(self):
-		print("-----------")
-		print("xSmallest = \n{}".format(self.xSmallest))
-		print("ySmallest = {}".format(self.ySmallest))
-		print("total running steps: {}".format(self.steps))
-		print("found smallest y at step: {}".format(self.smalestAt))
-		print("-----------")
+    def report(self):
+        print("-----------")
+        print("xSmallest = \n{}".format(self.xSmallest))
+        print("ySmallest = {}".format(self.ySmallest))
+        print("total running steps: {}".format(self.steps))
+        print("found smallest y at step: {}".format(self.smalestAt))
+        print("-----------")
 
 
 #Test
@@ -120,9 +120,9 @@ print(steps, smallestStep)
 print((xmin, ymin))
 
 surf = ThirdOrderSurface(
-		(-10, 10, 100), (-10, 10, 100), (-1, 10),
-		[lambda x: np.sqrt( np.add( np.power(x[:, 0], 2), np.power(x[:, 1], 2) ) )]
-	)
+        (-10, 10, 100), (-10, 10, 100), (-1, 10),
+        [lambda x: np.sqrt( np.add( np.power(x[:, 0], 2), np.power(x[:, 1], 2) ) )]
+    )
 surf.plot(False)
 
 fig = plt.gcf()

@@ -18,11 +18,11 @@ class ThirdOrderSurface:
         self.x = self.x.flatten()
         self.y = self.y.flatten()
         self.zfunction = zfunction
-        
+
         combineXY = np.column_stack((self.x.reshape(-1, 1), self.y.reshape(-1, 1)))
         zfunc = bf.BaseBasicFunction(combineXY, zfunction)
         self.z = zfunc.generate(False).flatten()
-        
+
     def plot(self, newfig: bool):
         fig = plt.gcf()
         if newfig:
@@ -31,11 +31,11 @@ class ThirdOrderSurface:
         ax = fig.gca(projection = '3d')
 
         surf = ax.plot_trisurf(
-                                self.x, 
-                                self.y, 
-                                self.z, 
+                                self.x,
+                                self.y,
+                                self.z,
                                 cmap=cm.coolwarm,
-                                linewidth=0, 
+                                linewidth=0,
                                 antialiased=False)
 
         ax.set_xlim(self.xrange[0], self.xrange[1])
@@ -43,7 +43,7 @@ class ThirdOrderSurface:
         ax.set_zlim(self.zrange[0], self.zrange[1])
 
         fig.colorbar(surf, shrink=0.5, aspect=5)
-        
+
     def genGaussianNoisyPoints(self, N, variance, seed = 0):
         if self.zfunction is None:
             raise Exception('no such z function')
