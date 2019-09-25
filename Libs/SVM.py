@@ -74,3 +74,26 @@ class PrimalSVM(SVM):
 
     def supportVectorPoints(self):
         return np.array([point for point in self.__findSupportVectorPoints()])
+
+class DualitySVM(SVM):
+    def __init__(self, X, t):
+        super().__init__(X, t)
+
+    def __calculate_w(self, alpha):
+
+
+    def fit(self):
+        Kgram = self.Xorig.dot(self.Xorig.T)
+        Y = self.torig.dot(self.torig.T)
+        K = matrix(Kgram * Y)
+        p = matrix(-np.ones(self.N).reshape(-1, 1))
+        G = matrix(-np.identity(self.N))
+        h = matrix(np.zeros(self.N).reshape(-1, 1))
+        A = matrix(self.torig.reshape(1, -1))
+        b = matrix(np.zeros((1, 1)))
+
+        solvers.options['show_progress'] = False
+        solultion = solvers.qp(K, p, G, h, A, b)
+        self.w = np.array(solultion['x']).reshape(-1, 1)
+        print("done fitting, w = \n{}".format(self.w))
+        return self
