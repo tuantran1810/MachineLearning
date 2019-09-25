@@ -78,9 +78,24 @@ class PrimalSVM(SVM):
 class DualitySVM(SVM):
     def __init__(self, X, t):
         super().__init__(X, t)
+        self.b = None
 
     def __calculate_w(self, alpha):
+        w = np.zeros(self.Korig).reshape(-1, 1)
+        atn = alpha*self.torig
+        at = alpha*self.torig
+        for _ in range(1, self.Korig):
+            at = np.hstack((at, atn))
 
+        tmp = at*self.Xorig
+        return np.sum(tmp, axis = 0).reshape(-1, 1)
+
+    def __calculate_b(self, alpha, w, t):
+        for i in range(self.N):
+            anum = np.asscalar(alpha[i])
+            if anum > 0.01:
+                return np.asscalar(t[i] - w.T.dot(self.Xorig[i].T))
+        return None
 
     def fit(self):
         Kgram = self.Xorig.dot(self.Xorig.T)
@@ -94,6 +109,27 @@ class DualitySVM(SVM):
 
         solvers.options['show_progress'] = False
         solultion = solvers.qp(K, p, G, h, A, b)
-        self.w = np.array(solultion['x']).reshape(-1, 1)
-        print("done fitting, w = \n{}".format(self.w))
+        alpha = np.array(solultion['x']).reshape(-1, 1)
+        self.w = self.__calculate_w(alpha)
+        self.b = self.__calculate_b(alpha, self.w, self.torig)
+        if self.b is not None:
+            print("done fitting, w = \n{}".format(self.w))
+            print("b = {}\n".format(self.b))
         return self
+
+    def predict(self, Xpredict, raw = False):
+        tmp = super().predict(self.Xorig, True)
+        tmp = tmp + self.b*(np.ones(self.N).reshape(-1, 1))
+        if raw:
+            return tmp
+        return np.array([i for i in super().__classify(tmp)], dtype = int).reshape(-1, 1)
+
+    def __findSupportVectorPoints(self):
+        ypredict = self.predict(self.Xorig, True)
+        for i in range(len(ypredict)):
+            num = np.asscalar(ypredict[i])
+            if (num > -1.001 and num < -0.999) or (num < 1.001 and num > 0.999):
+                yield self.Xorig[i]
+
+    def supportVectorPoints(self):
+        return np.array([point for point in self.__findSupportVectorPoints()])
