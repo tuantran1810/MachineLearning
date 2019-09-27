@@ -12,19 +12,19 @@ class SVM():
     def fit(self):
         raise Exception("fit() haven't been implemented!")
 
-    def __classify(self, tpredict):
+    def _classify(self, tpredict):
         for t in tpredict.ravel():
             if t > 0.0:
                 yield 1
             else:
-                yield 0
+                yield -1
 
     def predict(self, Xpredict, raw = False):
         if self.w is None:
             raise Exception("w haven't been calculated, do fit() first")
         tpredict = Xpredict.dot(self.w)
         if raw: return tpredict
-        return np.array([i for i in self.__classify(tpredict)], dtype = int).reshape(-1, 1)
+        return np.array([i for i in self._classify(tpredict)], dtype = int).reshape(-1, 1)
 
 class PrimalSVM(SVM):
     def __init__(self, X, t):
@@ -118,11 +118,12 @@ class DualitySVM(SVM):
         return self
 
     def predict(self, Xpredict, raw = False):
-        tmp = super().predict(self.Xorig, True)
-        tmp = tmp + self.b*(np.ones(self.N).reshape(-1, 1))
+        Npredict = len(Xpredict)
+        tmp = super().predict(Xpredict, True)
+        tmp = tmp + self.b*(np.ones(Npredict).reshape(-1, 1))
         if raw:
             return tmp
-        return np.array([i for i in super().__classify(tmp)], dtype = int).reshape(-1, 1)
+        return np.array([i for i in super()._classify(tmp)], dtype = int).reshape(-1, 1)
 
     def __findSupportVectorPoints(self):
         ypredict = self.predict(self.Xorig, True)
