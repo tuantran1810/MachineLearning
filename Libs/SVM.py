@@ -93,7 +93,7 @@ class DualitySVM(SVM):
     def _calculate_b(self, alpha, w, t):
         for i in range(self.N):
             anum = np.asscalar(alpha[i])
-            if anum > 0.01:
+            if anum > 0.00000000001:
                 return np.asscalar(t[i] - w.T.dot(self.Xorig[i].T))
         return None
 

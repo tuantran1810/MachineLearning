@@ -1,5 +1,6 @@
 import numpy as np
 from SVM import SVM
+from SVM import DualitySVM
 from cvxopt import matrix, solvers
 
 class PrimalSoftMarginSVM(SVM):
@@ -66,10 +67,27 @@ class PrimalSoftMarginSVM(SVM):
     def supportVectorPoints(self):
         return np.array([point for point in self.__findSupportVectorPoints()])
 
+    def xiTotal(self):
+        return np.sum(self.xi)
+
+    def wrongPositionPoints(self):
+        cnt = 0
+        for i in self.xi:
+            if i > 1.0:
+                cnt += 1
+        return cnt
+
+    def width(self):
+        return 1.0/(np.sqrt(self.w.T.dot(self.w).item()))
+
 class DualitySoftMarginSVM(DualitySVM):
     def __init__(self, X, t, C):
         self.C = C
+        self.xi = None
         super().__init__(X, t)
+
+    def __calculate_xi(self, alpha):
+        return self.C*np.ones(self.N).reshape(-1, 1) - alpha
 
     def fit(self):
         Kgram = self.Xorig.dot(self.Xorig.T)
@@ -85,10 +103,22 @@ class DualitySoftMarginSVM(DualitySVM):
         solultion = solvers.qp(K, p, G, h, A, b)
         alpha = np.array(solultion['x']).reshape(-1, 1)
         self.w = self._calculate_w(alpha)
-        self.b = self.__calculate_b(alpha, self.w, self.torig)
+        self.b = self._calculate_b(alpha, self.w, self.torig)
+        self.xi = self.__calculate_xi(alpha)
         if self.b is not None:
             print("done fitting, w = \n{}".format(self.w))
             print("b = {}\n".format(self.b))
         return self
 
+    def xiTotal(self):
+        return np.sum(self.xi)
 
+    def wrongPositionPoints(self):
+        cnt = 0
+        for i in self.xi:
+            if i > 1.0:
+                cnt += 1
+        return cnt
+
+    def width(self):
+        return 1.0/(np.sqrt(self.w.T.dot(self.w).item()))
