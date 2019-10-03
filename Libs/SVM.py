@@ -80,7 +80,7 @@ class DualitySVM(SVM):
         super().__init__(X, t)
         self.b = None
 
-    def __calculate_w(self, alpha):
+    def _calculate_w(self, alpha):
         w = np.zeros(self.Korig).reshape(-1, 1)
         atn = alpha*self.torig
         at = alpha*self.torig
@@ -90,7 +90,7 @@ class DualitySVM(SVM):
         tmp = at*self.Xorig
         return np.sum(tmp, axis = 0).reshape(-1, 1)
 
-    def __calculate_b(self, alpha, w, t):
+    def _calculate_b(self, alpha, w, t):
         for i in range(self.N):
             anum = np.asscalar(alpha[i])
             if anum > 0.01:
@@ -110,8 +110,8 @@ class DualitySVM(SVM):
         solvers.options['show_progress'] = False
         solultion = solvers.qp(K, p, G, h, A, b)
         alpha = np.array(solultion['x']).reshape(-1, 1)
-        self.w = self.__calculate_w(alpha)
-        self.b = self.__calculate_b(alpha, self.w, self.torig)
+        self.w = self._calculate_w(alpha)
+        self.b = self._calculate_b(alpha, self.w, self.torig)
         if self.b is not None:
             print("done fitting, w = \n{}".format(self.w))
             print("b = {}\n".format(self.b))

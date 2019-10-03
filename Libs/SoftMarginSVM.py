@@ -65,3 +65,30 @@ class PrimalSoftMarginSVM(SVM):
 
     def supportVectorPoints(self):
         return np.array([point for point in self.__findSupportVectorPoints()])
+
+class DualitySoftMarginSVM(DualitySVM):
+    def __init__(self, X, t, C):
+        self.C = C
+        super().__init__(X, t)
+
+    def fit(self):
+        Kgram = self.Xorig.dot(self.Xorig.T)
+        Y = self.torig.dot(self.torig.T)
+        K = matrix(Kgram * Y)
+        p = matrix(-np.ones(self.N).reshape(-1, 1))
+        G = matrix(np.vstack((-np.identity(self.N), np.identity(self.N))))
+        h = matrix(np.vstack((np.zeros(self.N).reshape(-1, 1), self.C * np.ones(self.N).reshape(-1, 1))))
+        A = matrix(self.torig.reshape(1, -1))
+        b = matrix(np.zeros((1, 1)))
+
+        solvers.options['show_progress'] = False
+        solultion = solvers.qp(K, p, G, h, A, b)
+        alpha = np.array(solultion['x']).reshape(-1, 1)
+        self.w = self._calculate_w(alpha)
+        self.b = self.__calculate_b(alpha, self.w, self.torig)
+        if self.b is not None:
+            print("done fitting, w = \n{}".format(self.w))
+            print("b = {}\n".format(self.b))
+        return self
+
+
