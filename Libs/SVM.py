@@ -91,11 +91,14 @@ class DualitySVM(SVM):
         return np.sum(tmp, axis = 0).reshape(-1, 1)
 
     def _calculate_b(self, alpha, w, t):
+        total = 0.0
+        cnt = 0
         for i in range(self.N):
             anum = np.asscalar(alpha[i])
             if anum > 0.00000000001:
-                return np.asscalar(t[i] - w.T.dot(self.Xorig[i].T))
-        return None
+                total += np.asscalar(t[i] - w.T.dot(self.Xorig[i].T))
+                cnt += 1
+        return total/cnt
 
     def fit(self):
         Kgram = self.Xorig.dot(self.Xorig.T)

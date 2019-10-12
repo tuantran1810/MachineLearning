@@ -54,18 +54,9 @@ class PrimalSoftMarginSVM(SVM):
         if raw: return tpredict
         return np.array([i for i in self._classify(tpredict)], dtype = int).reshape(-1, 1)
 
-    def __findSupportVectorPoints(self):
-        ypredict = self.__predict(self.Xorig, True)
-        for i in range(len(ypredict)):
-            num = ypredict[i].item()
-            if (num > -1.001 and num < -0.999) or (num < 1.001 and num > 0.999):
-                yield self.Xorig[i]
-
     def predict(self, Xpredict):
         return self.__predict(Xpredict)
 
-    def supportVectorPoints(self):
-        return np.array([point for point in self.__findSupportVectorPoints()])
 
     def xiTotal(self):
         return np.sum(self.xi)
@@ -73,7 +64,7 @@ class PrimalSoftMarginSVM(SVM):
     def wrongPositionPoints(self):
         cnt = 0
         for i in self.xi:
-            if i > 1.0:
+            if i > 0.9999:
                 cnt += 1
         return cnt
 
@@ -87,7 +78,14 @@ class DualitySoftMarginSVM(DualitySVM):
         super().__init__(X, t)
 
     def __calculate_xi(self, alpha):
-        return self.C*np.ones(self.N).reshape(-1, 1) - alpha
+        y = self.predict(self.Xorig, raw = True)
+        one = np.ones(self.N).reshape(-1, 1)
+        __xi = (one - self.torig*y).flatten()
+        for i in range(self.N):
+            if __xi[i] < 0.0:
+                __xi[i] = 0.0
+        return __xi.reshape(-1, 1)
+
 
     def fit(self):
         Kgram = self.Xorig.dot(self.Xorig.T)
@@ -108,6 +106,7 @@ class DualitySoftMarginSVM(DualitySVM):
         if self.b is not None:
             print("done fitting, w = \n{}".format(self.w))
             print("b = {}\n".format(self.b))
+            print("xi = \n{}".format(self.xi))
         return self
 
     def xiTotal(self):
@@ -116,7 +115,7 @@ class DualitySoftMarginSVM(DualitySVM):
     def wrongPositionPoints(self):
         cnt = 0
         for i in self.xi:
-            if i > 1.0:
+            if i > 0.9999:
                 cnt += 1
         return cnt
 
