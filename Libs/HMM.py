@@ -1,5 +1,4 @@
 import numpy as np
-import ProbDistributor
 
 class HMMProbCalculator():
     def __init__(self, A, B, pi):
@@ -14,7 +13,7 @@ class HMMProbCalculator():
         self.alpha = None
 
     def __str__(self):
-        return str(self.alpha)
+        return "alpha matrix:\n" + str(self.alpha)
 
     def _fitInit(self, observation):
         self.NObservation = len(observation)
@@ -27,7 +26,7 @@ class HMMProbCalculator():
     def _fitInduction(self, observation):
         for i in range(1, self.NObservation):
             preProb = self.alpha[:, i - 1].reshape(1, -1)
-            postProb = preProb.dot(A).reshape(-1, 1)
+            postProb = preProb.dot(self.A).reshape(-1, 1)
             obsProb = self.B[:, observation[i]].reshape(-1, 1)
             self.alpha[:, i] = (postProb * obsProb).flatten()
 
