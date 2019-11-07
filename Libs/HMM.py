@@ -32,6 +32,7 @@ class HMMProbCalculator():
             self.alpha[:, i] = (postProb * obsProb).flatten()
 
     def fit(self, observation):
+        observation = np.array(observation)
         for obs in observation:
             if obs >= self.NStates: raise Exception("observation state invalid")
         if not self._fitInit(observation):
@@ -81,6 +82,95 @@ class HMMViterbiStatePredictor(HMMProbCalculator):
         reversed(lst)
         return lst
 
+class HMMOptimizer():
+    def __init__(self, A = None, B = None, pi = None, NStates = None, NObsStates = None):
+        self.A = A
+        self.B = B
+        self.pi = pi
+        self.NStates = NStates
+        self.NObsStates = NObsStates
+        if A is None and B is None and pi is None:
+            self.A, self.B, self.pi = self.__initFromScratch(NStates, NObsStates)
+        elif A is None or B is None or pi is None:
+            raise Exception("cannot init the model!")
+        else:
+            self.NStates = len(self.A)
+            self.NObsStates = len(self.B[0])
+        self.A.reshape(NStates, -1)
+        self.B.reshape(NStates, -1)
+        self.pi.reshape(1, -1)
+        self.NObservation = 0
+        self.alpha = None
+        self.beta = None
+        self.theta = None
+        self.eta = None
+
+    def __str__(self):
+        return ("A:\n" + str(self.A) + "\nB:\n" + str(self.B) + "\npi:\n" + str(self.pi))
+
+    def __initFromScratch(self, NStates, NObsStates):
+        if NStates is None or NObsStates is None:
+            raise Exception("cannot init the model!")
+        A = np.random.uniform(size = (NStates, NStates))
+        B = np.random.uniform(size = (NStates, NObsStates))
+        pi = np.random.uniform(size = NStates)
+        return A, B, pi
+
+    def __fitInit(self, observation):
+        obs = observation[0]
+        self.alpha = np.zeros(shape = (self.NStates, self.NObservation))
+        self.beta = np.zeros(shape = (self.NStates, self.NObservation))
+        self.theta = np.zeros(shape = (self.NStates, self.NObservation))
+        self.eta = np.zeros(shape = (self.NStates, self.NStates, self.NObservation - 1))
+        self.alpha[:, 0] = self.pi * self.B[:, obs].ravel()
+        self.beta[:, -1] = np.ones(self.NStates)
+
+    def __fitInduction(self, observation):
+        for t in range(1, self.NObservation):
+            preProb = self.alpha[:, t - 1].reshape(1, -1)
+            postProb = preProb.dot(A).reshape(-1, 1)
+            obsProb = self.B[:, observation[t]].reshape(-1, 1)
+            self.alpha[:, t] = (postProb * obsProb).flatten()
+        for t in range(self.NObservation - 2, -1, -1):
+            preProb = (self.beta[:, t + 1].ravel() * self.B[:, observation[t + 1]].ravel()).reshape(1, -1)
+            self.beta[:, t] = preProb.dot(self.A).flatten()
+
+    def __fitThetaEta(self, observation):
+        for t in range(self.NObservation - 1):
+            alpha_t = self.alpha[:, t].reshape(-1, 1)
+            beta_t1 = self.beta[:, t + 1].reshape(1, -1)
+            tmp = alpha_t.dot(beta_t1) * self.A
+            obs_t1 = observation[t + 1]
+            bj = self.B[:, obs_t1].reshape(1, -1)
+            eta_t = tmp * bj
+            self.eta[:, :, t] = eta_t
+            self.theta[:, t] = np.sum(eta_t, axis = 1).ravel()
+        self.theta[:, -1] = self.alpha[:, -1]
+
+    def __fitUpdate(self, observation):
+        self.pi = self.theta[:, 0].ravel()
+        sum_eta = np.sum(self.eta, axis = 2)
+        sum_theta = np.sum(self.theta, axis = 1)
+        self.A = sum_eta / (sum_theta - self.theta[:, -1])
+        for i in range(self.NObsStates):
+            compare = (observation == i).reshape(1, -1)
+            theta_obs_i = self.theta * compare
+            sum_theta_obs_i = np.sum(theta_obs_i, axis = 1)
+            self.B[:, i] = sum_theta_obs_i / sum_theta
+
+    def __fitEpoch(self, observation):
+        self.NObservation = len(observation)
+        if self.NObservation < 1: raise Exception("cannot do fitting for the observation")
+        self.__fitInit(observation)
+        self.__fitInduction(observation)
+        self.__fitThetaEta(observation)
+        self.__fitUpdate(observation)
+
+    def fit(self, observation):
+        observation = np.array(observation)
+        for i in range(1): self.__fitEpoch(observation)
+        return self
+
 
 A = np.array(
     [
@@ -100,11 +190,16 @@ B = np.array(
 
 pi = np.array([0.25, 0.25, 0.25, 0.25])
 
-cal = HMMProbCalculator(A, B, pi).fit([0, 2, 1, 1, 1, 0, 0, 2, 2])
-print(cal)
-print(cal.getFittingProb())
+# cal = HMMProbCalculator(A, B, pi).fit([0, 2, 1, 1, 1, 0, 0, 2, 2])
+# print(cal)
+# print(cal.getFittingProb())
 
-viterbi = HMMViterbiStatePredictor(A, B, pi).fit([0, 2, 1, 1, 1, 0, 0, 2, 2])
-print(viterbi)
-print(viterbi.getFittingProb())
-print(viterbi.getPath())
+# print("================================")
+# viterbi = HMMViterbiStatePredictor(A, B, pi).fit([0, 2, 1, 1, 1, 0, 0, 2, 2])
+# print(viterbi)
+# print(viterbi.getFittingProb())
+# print(viterbi.getPath())
+
+print("================================")
+opt = HMMOptimizer(NStates = 4, NObsStates = 3).fit([0, 2, 1, 1, 1, 0, 0, 2, 2])
+print(opt)
