@@ -111,9 +111,9 @@ class HMMOptimizer():
     def __initFromScratch(self, NStates, NObsStates):
         if NStates is None or NObsStates is None:
             raise Exception("cannot init the model!")
-        A = np.random.uniform(size = (NStates, NStates))
-        B = np.random.uniform(size = (NStates, NObsStates))
-        pi = np.random.uniform(size = NStates)
+        A = (np.ones(NStates * NStates) * (1.0 / NStates)).reshape(NStates, -1)
+        B = (np.ones(NStates * NObsStates) * (1.0 / NObsStates)).reshape(NStates, -1)
+        pi = (np.ones(NStates) * (1.0 / NStates)).reshape(1, -1)
         return A, B, pi
 
     def __fitInit(self, observation):
@@ -132,8 +132,8 @@ class HMMOptimizer():
             obsProb = self.B[:, observation[t]].reshape(-1, 1)
             self.alpha[:, t] = (postProb * obsProb).flatten()
         for t in range(self.NObservation - 2, -1, -1):
-            preProb = (self.beta[:, t + 1].ravel() * self.B[:, observation[t + 1]].ravel()).reshape(1, -1)
-            self.beta[:, t] = preProb.dot(self.A).flatten()
+            BmulBeta = (self.B[:, observation[t + 1]].ravel() * self.beta[:, t + 1].ravel()).reshape(-1, 1)
+            self.beta[:, t] = self.A.dot(BmulBeta).flatten()
 
     def __fitThetaEta(self, observation):
         for t in range(self.NObservation - 1):
@@ -143,6 +143,8 @@ class HMMOptimizer():
             obs_t1 = observation[t + 1]
             bj = self.B[:, obs_t1].reshape(1, -1)
             eta_t = tmp * bj
+            sumEta = np.sum(eta_t)
+            eta_t = eta_t / sumEta
             self.eta[:, :, t] = eta_t
             self.theta[:, t] = np.sum(eta_t, axis = 1).ravel()
         self.theta[:, -1] = self.alpha[:, -1]
@@ -151,7 +153,8 @@ class HMMOptimizer():
         self.pi = self.theta[:, 0].ravel()
         sum_eta = np.sum(self.eta, axis = 2)
         sum_theta = np.sum(self.theta, axis = 1)
-        self.A = sum_eta / (sum_theta - self.theta[:, -1])
+        sum_theta_T_1 = sum_theta - self.theta[:, -1]
+        self.A = (sum_eta.T / sum_theta_T_1).T
         for i in range(self.NObsStates):
             compare = (observation == i).reshape(1, -1)
             theta_obs_i = self.theta * compare
@@ -168,27 +171,27 @@ class HMMOptimizer():
 
     def fit(self, observation):
         observation = np.array(observation)
-        for i in range(1): self.__fitEpoch(observation)
+        for i in range(50): self.__fitEpoch(observation)
         return self
 
 
-A = np.array(
-    [
-        [0.2, 0.4, 0.1, 0.3],
-        [0.1, 0.2, 0.3, 0.4],
-        [0.4, 0.3, 0.2, 0.1],
-        [0.1, 0.5, 0.2, 0.2]
-    ])
+# A = np.array(
+#     [
+#         [0.2, 0.4, 0.1, 0.3],
+#         [0.1, 0.2, 0.3, 0.4],
+#         [0.4, 0.3, 0.2, 0.1],
+#         [0.1, 0.5, 0.2, 0.2]
+#     ])
 
-B = np.array(
-    [
-        [0.3, 0.3, 0.4],
-        [0.2, 0.1, 0.7],
-        [0.4, 0.1, 0.5],
-        [0.1, 0.6, 0.3]
-    ])
+# B = np.array(
+#     [
+#         [0.3, 0.3, 0.4],
+#         [0.2, 0.1, 0.7],
+#         [0.4, 0.1, 0.5],
+#         [0.1, 0.6, 0.3]
+#     ])
 
-pi = np.array([0.25, 0.25, 0.25, 0.25])
+# pi = np.array([0.25, 0.25, 0.25, 0.25])
 
 # cal = HMMProbCalculator(A, B, pi).fit([0, 2, 1, 1, 1, 0, 0, 2, 2])
 # print(cal)
@@ -200,6 +203,6 @@ pi = np.array([0.25, 0.25, 0.25, 0.25])
 # print(viterbi.getFittingProb())
 # print(viterbi.getPath())
 
-print("================================")
-opt = HMMOptimizer(NStates = 4, NObsStates = 3).fit([0, 2, 1, 1, 1, 0, 0, 2, 2])
-print(opt)
+# print("================================")
+# opt = HMMOptimizer(NStates = 4, NObsStates = 3).fit([0, 2, 1, 1, 1, 0, 0, 2, 2])
+# print(opt)
