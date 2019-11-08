@@ -1,4 +1,5 @@
 import numpy as np
+from ProbDistributor import GenerateDistributionMatrix, GenerateDistribution
 
 class HMMProbCalculator():
     def __init__(self, A, B, pi):
@@ -110,9 +111,9 @@ class HMMOptimizer():
     def __initFromScratch(self, NStates, NObsStates):
         if NStates is None or NObsStates is None:
             raise Exception("cannot init the model!")
-        A = (np.ones(NStates * NStates) * (1.0 / NStates)).reshape(NStates, -1)
-        B = (np.ones(NStates * NObsStates) * (1.0 / NObsStates)).reshape(NStates, -1)
-        pi = (np.ones(NStates) * (1.0 / NStates)).reshape(1, -1)
+        A = GenerateDistributionMatrix(NStates, NStates)
+        B = GenerateDistributionMatrix(NStates, NObsStates)
+        pi = GenerateDistribution(NStates)
         return A, B, pi
 
     def __fitInit(self, observation):
@@ -127,12 +128,13 @@ class HMMOptimizer():
     def __fitInduction(self, observation):
         for t in range(1, self.NObservation):
             preProb = self.alpha[:, t - 1].reshape(1, -1)
-            postProb = preProb.dot(A).reshape(-1, 1)
+            postProb = preProb.dot(self.A).reshape(-1, 1)
             obsProb = self.B[:, observation[t]].reshape(-1, 1)
             self.alpha[:, t] = (postProb * obsProb).flatten()
         for t in range(self.NObservation - 2, -1, -1):
             BmulBeta = (self.B[:, observation[t + 1]].ravel() * self.beta[:, t + 1].ravel()).reshape(-1, 1)
             self.beta[:, t] = self.A.dot(BmulBeta).flatten()
+        # print(self.beta)
 
     def __fitThetaEta(self, observation):
         for t in range(self.NObservation - 1):
@@ -146,7 +148,7 @@ class HMMOptimizer():
             eta_t = eta_t / sumEta
             self.eta[:, :, t] = eta_t
             self.theta[:, t] = np.sum(eta_t, axis = 1).ravel()
-        self.theta[:, -1] = self.alpha[:, -1]
+        self.theta[:, -1] = self.alpha[:, -1] / np.sum(self.alpha[:, -1])
 
     def __fitUpdate(self, observation):
         self.pi = self.theta[:, 0].ravel()
@@ -160,17 +162,33 @@ class HMMOptimizer():
             sum_theta_obs_i = np.sum(theta_obs_i, axis = 1)
             self.B[:, i] = sum_theta_obs_i / sum_theta
 
-    def __fitEpoch(self, observation):
+    def __fitEpoch(self, observation, epsilon):
         self.NObservation = len(observation)
         if self.NObservation < 1: raise Exception("cannot do fitting for the observation")
+        oldA = np.copy(self.A)
+        oldB = np.copy(self.B)
+        oldPi = np.copy(self.pi)
         self.__fitInit(observation)
         self.__fitInduction(observation)
         self.__fitThetaEta(observation)
         self.__fitUpdate(observation)
+        ADis = self.__matrixEuclidDistance(oldA, self.A)
+        BDis = self.__matrixEuclidDistance(oldB, self.B)
+        PiDis = self.__matrixEuclidDistance(oldPi, self.pi)
+        return ADis < epsilon and BDis < epsilon and PiDis < epsilon
 
-    def fit(self, observation):
+    def __matrixEuclidDistance(self, m1, m2):
+        m = m1 - m2
+        m = m * m
+        return np.sqrt(np.sum(m))
+
+    def fit(self, observation, NSteps = 100, epsilon = 0.00000000001):
         observation = np.array(observation)
-        for i in range(50): self.__fitEpoch(observation)
+        for i in range(NSteps): 
+            if self.__fitEpoch(observation, epsilon):
+                print("epsilon reached!, steps = {}".format(i))
+                return self
+        print("out of steps")
         return self
 
 
@@ -203,5 +221,5 @@ class HMMOptimizer():
 # print(viterbi.getPath())
 
 # print("================================")
-# opt = HMMOptimizer(NStates = 4, NObsStates = 3).fit([0, 2, 1, 1, 1, 0, 0, 2, 2])
+# opt = HMMOptimizer(NStates = 4, NObsStates = 3).fit([2, 2, 1, 2, 1, 2, 1, 1, 2, 2, 2, 1, 0, 0, 2, 0, 1, 2, 1, 0])
 # print(opt)

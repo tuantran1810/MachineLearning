@@ -19,3 +19,19 @@ class Distributor():
     def Prob(self, i):
         if i < self.N: return self.distribution[i]
         return 0
+
+def GenerateDistributionMatrix(row, col):
+    ret = np.zeros(row * col).reshape(row, col)
+    for i in range(row):
+        ret[i, :] = GenerateDistribution(col)
+    return ret
+
+def GenerateDistribution(N):
+    acc = 0.0
+    ret = np.zeros(N)
+    for i in range(N - 1):
+        gen = np.random.uniform(0, 1.0 - acc)
+        acc += gen
+        ret[i] = gen
+    ret[-1] = 1.0 - acc
+    return ret
