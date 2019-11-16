@@ -106,7 +106,8 @@ class HMMOptimizer():
         self.eta = None
 
     def __str__(self):
-        return ("A:\n" + str(self.A) + "\nB:\n" + str(self.B) + "\npi:\n" + str(self.pi))
+        return ("A:\n" + str(self.A.round(4)) + "\nB:\n" + 
+            str(self.B.round(4)) + "\npi:\n" + str(self.pi.round(4)))
 
     def __initFromScratch(self, NStates, NObsStates):
         if NStates is None or NObsStates is None:
@@ -134,7 +135,6 @@ class HMMOptimizer():
         for t in range(self.NObservation - 2, -1, -1):
             BmulBeta = (self.B[:, observation[t + 1]].ravel() * self.beta[:, t + 1].ravel()).reshape(-1, 1)
             self.beta[:, t] = self.A.dot(BmulBeta).flatten()
-        # print(self.beta)
 
     def __fitThetaEta(self, observation):
         for t in range(self.NObservation - 1):
