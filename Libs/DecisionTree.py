@@ -1,7 +1,9 @@
 import numpy as np
 
 class SimpleNode():
-    def __init__(self):
+    def __init__(self, totalData, nonSplitPercent = 0):
+        self.nonSplitPercent = nonSplitPercent
+        self.totalData = totalData
         self.isLeaf = False
         self.leafValue = None
         self.nodeName = None
@@ -26,17 +28,27 @@ class SimpleNode():
             entropy += self.__entropy(cnt) * len(tmp) / N
         return entropy
 
+    def __stopCondition(self, t_unique, t_cnt, data, target):
+        if len(t_unique) == 1:
+            self.isLeaf = True
+            self.leafValue = t_unique[0]
+            self.nodeName = "Leaf " + str(t_unique[0])
+            return self
+        elif len(target) <= self.totalData * self.nonSplitPercent/100 or len(data[0]) == 0:
+            self.isLeaf = True
+            self.leafValue = t_unique[np.argmax(t_cnt)]
+            self.nodeName = "Leaf " + str(self.leafValue)
+            return self
+        return None
+
     def fit(self, data, target, attributes):
         data = data[:,:]
         attributes = attributes[:]
         target = target[:,:]
 
         t_unique, cnt = np.unique(target, return_counts = True)
-        if len(t_unique) == 1:
-            self.isLeaf = True
-            self.leafValue = t_unique[0]
-            self.nodeName = "Leaf " + str(t_unique[0])
-            return self
+        stopSelf = self.__stopCondition(t_unique, cnt, data, target)
+        if stopSelf is not None: return stopSelf
 
         targetEntropy = self.__entropy(cnt)
         D = len(data[0])
@@ -55,7 +67,7 @@ class SimpleNode():
             tmp = nodeData == d
             newData = data[tmp]
             newTarget = target[tmp]
-            self.nodes[d] = SimpleNode().fit(newData, newTarget, attributes)
+            self.nodes[d] = SimpleNode(self.totalData, self.nonSplitPercent).fit(newData, newTarget, attributes)
         return self
 
     def printTree(self, depth = 0, key = None):
@@ -73,20 +85,22 @@ class SimpleNode():
         data = data.flatten()
         if (self.isLeaf): return self.leafValue
         if data[self.dataArg] in self.nodes:
-            return self.nodes[data[self.dataArg]].predict(data)
+            chosenNode = data[self.dataArg]
+            return self.nodes[chosenNode].predict(np.delete(data, self.dataArg))
         else:
-            raise Exception(f"Unrecognized attribute: {data[self.dataArg]}")
+            raise Exception(f"Unrecognized attribute: {data[self.dataArg]} in the node of {self.nodeName}")
 
 class SimpleDecisionTree():
-    def __init__(self):
+    def __init__(self, nonSplitPercent = 0):
         self.root = None
         self.N = 0
         self.D = 0
+        self.nonSplitPercent = nonSplitPercent
 
     def fit(self, data, target, attributes):
         self.N = len(data)
         self.D = len(data[0])
-        self.root = SimpleNode().fit(data, target, attributes)
+        self.root = SimpleNode(self.N, self.nonSplitPercent).fit(data, target, attributes)
         return self
 
     def predict(self, data):
@@ -119,4 +133,4 @@ class SimpleDecisionTree():
 # dt = SimpleDecisionTree().fit(data, target, attributes)
 # print(dt)
 
-# print(dt.predict(np.array(["Overcast", "Mild", "Normal", "Weak"])))
+# print(dt.predict(np.array(["Sunny", "Mild", "High", "Weak"])))
