@@ -24,6 +24,12 @@ class Classification():
     def _sigmoid(self, z):
         return 1.0/(1.0 + np.exp(-z))
 
+    def __softmax(self, z):
+        maxz = np.amax(z, axis = 1).reshape(-1, 1)
+        expz = np.exp(z - maxz)
+        tmp = np.sum(expz, axis = 1).reshape(-1, 1)
+        return expz/tmp
+
     def _segmentation(self):
         for i in range(self.Nsegments):
             segX = self.X[i*self.NeachSegment:(i+1)*self.NeachSegment]
@@ -35,7 +41,7 @@ class Classification():
 
     def __fit(self, segmentX, segmentt):
         z = segmentX.dot(self.w)
-        yhat = self._sigmoid(z)
+        yhat = self.__softmax(z)
         deltaw = segmentX.T.dot(yhat - segmentt)
         self.w = self.w - self.eta*deltaw
 
@@ -47,22 +53,21 @@ class Classification():
     def fit(self):
         for i in range(self.Nepoch):
             self._fit()
-        print("Training MSE = {}".format(self.trainMSE()))
+        print("Training cross entropy = \n{}".format(self.trainCrossEntropy()))
         return self
 
-    def _mse(self, t, prediction):
-        Nsample = len(t)
-        e = t - prediction
-        return e.T.dot(e)/Nsample
+    def _crossEntropy(self, t, prediction):
+        tmp = - t * np.log(prediction + np.finfo(float).eps)
+        return np.sum(tmp)
 
-    def trainMSE(self):
+    def trainCrossEntropy(self):
         prediction = self._predict(self.X)
-        return self._mse(self.t, prediction)
+        return self._crossEntropy(self.t, prediction)
 
     def _predict(self, X, t = None):
-        prediction = self._sigmoid(X.dot(self.w))
+        prediction = self.__softmax(X.dot(self.w))
         if t is not None:
-            print("MSE for prediction = {}".format(self._mse(t, prediction)))
+            print("Cross entropy for prediction = \n{}".format(self._crossEntropy(t, prediction)))
         return prediction
 
     def predictLabel(self, X, t = None):
