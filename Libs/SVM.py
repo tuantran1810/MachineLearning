@@ -79,6 +79,7 @@ class DualitySVM(SVM):
     def __init__(self, X, t):
         super().__init__(X, t)
         self.b = None
+        self.alpha = None
 
     def _calculate_w(self, alpha):
         w = np.zeros(self.Korig).reshape(-1, 1)
@@ -112,9 +113,9 @@ class DualitySVM(SVM):
 
         solvers.options['show_progress'] = False
         solultion = solvers.qp(K, p, G, h, A, b)
-        alpha = np.array(solultion['x']).reshape(-1, 1)
-        self.w = self._calculate_w(alpha)
-        self.b = self._calculate_b(alpha, self.w, self.torig)
+        self.alpha = np.array(solultion['x']).reshape(-1, 1)
+        self.w = self._calculate_w(self.alpha)
+        self.b = self._calculate_b(self.alpha, self.w, self.torig)
         if self.b is not None:
             print("done fitting, w = \n{}".format(self.w))
             print("b = {}\n".format(self.b))
@@ -129,10 +130,9 @@ class DualitySVM(SVM):
         return np.array([i for i in super()._classify(tmp)], dtype = int).reshape(-1, 1)
 
     def __findSupportVectorPoints(self):
-        ypredict = self.predict(self.Xorig, True)
-        for i in range(len(ypredict)):
-            num = np.asscalar(ypredict[i])
-            if (num > -1.001 and num < -0.999) or (num < 1.001 and num > 0.999):
+        for i in range(len(self.alpha)):
+            num = np.asscalar(self.alpha[i])
+            if (num > 0.001):
                 yield self.Xorig[i]
 
     def supportVectorPoints(self):
