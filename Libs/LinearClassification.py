@@ -87,6 +87,11 @@ class Classification():
         return np.array(ret)
 
 class TwoClassesClassification(Classification):
+    def __init__(self, X, t, eta = 0.1, Nsegments = 5, Nepoch = 10, w0 = None, seed = None):
+        t = np.hstack((1 - t, t))
+        super().__init__(X, t, eta, Nsegments, Nepoch, w0, seed)
+
     def predict(self, X, t = None):
         prediction = self._predict(X, t)
-        return np.heaviside(prediction - 0.5, 0.0)
+        tmp = np.heaviside(prediction - 0.5, 0.0)
+        return tmp[:, 1].reshape(-1, 1)
