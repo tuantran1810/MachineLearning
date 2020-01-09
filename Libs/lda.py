@@ -58,8 +58,13 @@ class LDA():
             tmp = self.central[c] - self.totalCentralPoint
             cnt = self.count[c]
             Sb += tmp.T.dot(tmp)*cnt
-        eigVal, eigVec = np.linalg.eig(np.linalg.inv(Sw).dot(Sb))
-        return eigVec
+        eigVal, eigVec = np.linalg.eigh(np.linalg.inv(Sw).dot(Sb))
+        pairs = [(np.abs(eigVal[i]), eigVec[i]) for i in range(len(eigVal))]
+        pairs = sorted(pairs, key=lambda x: x[0], reverse=True)
+        wMatrix = pairs[0][1].reshape(-1, 1)
+        for i in range(1, len(pairs)):
+            wMatrix = np.hstack((wMatrix, pairs[i][1].reshape(-1, 1)))
+        return wMatrix
 
 class TwoClassesLDA(LDA):
     def __init__(self):
