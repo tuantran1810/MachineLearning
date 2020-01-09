@@ -1,7 +1,5 @@
 import numpy as np
 from numpy import linalg as LA
-from cvxopt import matrix, solvers
-
 
 class PCA():
     def __init__(self, X):
@@ -20,6 +18,12 @@ class PCA():
         S = (Xvar.T.dot(Xvar))/self.N
         self.Xmean = Xmean[0]
         self.eigenValues, self.eigenVectors = LA.eig(S)
-        print(self.eigenValues)
-        print(self.eigenVectors)
         return self
+
+    def getw(self):
+        pairs = [(np.abs(self.eigenValues[i]), self.eigenVectors[i]) for i in range(len(self.eigenValues))]
+        pairs = sorted(pairs, key=lambda x: x[0], reverse=True)
+        wMatrix = pairs[0][1].reshape(-1, 1)
+        for i in range(1, len(pairs)):
+            wMatrix = np.hstack((wMatrix, pairs[i][1].reshape(-1, 1)))
+        return wMatrix
